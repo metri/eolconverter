@@ -1,0 +1,95 @@
+#!/bin/bash
+
+eol_type=''
+set_flag=''
+
+#process command line options
+if [[ -z "$1" ]]; then
+        echo "no argument supplied"
+        echo "see \"--help\" for help"
+        exit 1
+fi
+while test $# -ge 1
+do
+        case "$1" in
+                -h | --help | '')
+                        echo ''
+                        echo 'usage:'
+                        echo '  eol --work_dir=DIR --masks=\"FILEMASKS\"'
+                        echo '  eol -w=DIR --m=\"FILEMASKS\"'
+                        echo '          FILEMASKS mast be separated \";\" without quatation symbols'
+                        echo 'E.g.:'
+                        echo '  eol --work_dir=/home/hamster/src/win/megaproj' --masks=\"*.sh\;*.txt\*conf\"
+                        echo ''
+                        exit 0
+                        ;;
+               -w*=* | --work-dir=*)
+                       work_dir=`echo $1 | sed 's/.*=//'`
+                       shift
+                       ;;
+               -m*=* | -mask=* | --mask=* | -masks=* | --masks=*)
+                       masks=`echo $1 | sed 's/.*=//'`
+                       shift
+                       ;;
+               *)
+                       echo "unknown option $1"
+                       echo "$0 --help for help"
+                       exit 1
+                       ;;
+        esac
+done
+
+if [[ -z "$work_dir" ]]; then
+        echo "fatal error: working directory must be set"
+        exit 1
+fi
+if [[ -z "$masks" ]]; then
+        echo "fatal error: mask files mast be set"
+        exit 1
+fi
+
+echo "============================="
+echo "Start Fixing EOL $(date) $(hostname)"
+echo "EOL will converted to the directory $work_dir"
+echo "for the following types: $masks"
+
+if [[ "$OSTYPE" == "linux-gnu"* ]] ||  [[ "$OSTYPE" == "freebsd"* ]]; then
+        sed_flag="-i"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+        sed_flag="-E -i"
+elif [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "msys" ]]; then
+        echo "Windows is maintained in the future... maybe... "
+        exit 0
+else
+        echo "fatal error: OS not supported"
+        exit 1
+fi
+
+echo "============================="
+
+while IFS=';' read -ra mask; do
+        count=0
+        for i in "${mask[@]}"; do
+                if [[ $count == 0 ]]; then
+                        mask_cmd="-name '$i'"
+                else
+                        mask_cmd="$mask_cmd -or -name '$i'"
+                fi
+                count=$(( $count +1 ))
+        done
+done <<< "$masks"
+
+sed_command="'s/\r\$//g' '{}' \;"
+find_cmd="$work_dir -type f -and \( $mask_cmd \) -print -exec"
+eval find $find_cmd sed $sed_flag $sed_command | while read line; do
+        echo "Processing file '$line'"
+done
+if [[ -z $? ]]; then
+        echo "error"
+        echo "Finish Fixing EOL with error code $? at $(date) $(hostname)"
+        exit 1
+else
+        echo "succeeded"
+        echo "Finish went great at $(date) $(hostname)! Be happy!"
+        exit 0
+fi
