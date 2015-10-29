@@ -53,7 +53,7 @@ echo "Start Fixing EOL $(date) $(hostname)"
 echo "EOL will converted to the directory $work_dir"
 echo "for the following types: $masks"
 
-if [[ "$OSTYPE" == "linux-gnu"* ]] ||  [[ "$OSTYPE" == "freebsd"* ]]; then
+if [[ "$OSTYPE" == "linux"* ]] ||  [[ "$OSTYPE" == "freebsd"* ]]; then
         sed_flag="-i"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
         sed_flag="-E -i"
