@@ -55,8 +55,10 @@ echo "for the following types: $masks"
 
 if [[ "$OSTYPE" == "linux"* ]] ||  [[ "$OSTYPE" == "freebsd"* ]]; then
         sed_flag="-i"
+        sed_command="'s/\r\$//g' '{}' \;"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
         sed_flag="-E -i"
+        sed_command="s/$'\r'$//g '{}' \;"
 elif [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "msys" ]]; then
         echo "Windows is maintained in the future... maybe... "
         exit 0
@@ -79,7 +81,6 @@ while IFS=';' read -ra mask; do
         done
 done <<< "$masks"
 
-sed_command="'s/\r\$//g' '{}' \;"
 find_cmd="$work_dir -type f -and \( $mask_cmd \) -print -exec"
 eval find $find_cmd sed $sed_flag $sed_command | while read line; do
         echo "Processing file '$line'"
